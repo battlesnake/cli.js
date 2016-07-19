@@ -1,0 +1,26 @@
+{
+  "name": "cli",
+  "version": "1.0.0",
+  "description": "CLI app utility",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/battlesnake/cli.js.git"
+  },
+  "author": "Mark K Cowan",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/battlesnake/cli.js/issues"
+  },
+  "homepage": "https://github.com/battlesnake/cli.js#readme",
+  "private": true,
+  "dependencies": {
+    "dslap": "github:battlesnake/d-slap",
+    "lodash": "^4.13.1",
+    "q": "^1.4.1",
+    "shell-quote": "^1.6.1"
+  }
+}
