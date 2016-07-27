@@ -1,5 +1,5 @@
 {
-  "name": "cli",
+  "name": "cli.js",
   "version": "1.0.1",
   "description": "CLI app utility",
   "main": "index.js",
@@ -16,7 +16,6 @@
     "url": "https://github.com/battlesnake/cli.js/issues"
   },
   "homepage": "https://github.com/battlesnake/cli.js#readme",
-  "private": true,
   "dependencies": {
     "lodash": "^4.13.1",
     "q": "^1.4.1",
