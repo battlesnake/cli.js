@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const q = require('q');
-const dslap = require('dslap');
+const qash = require('qash');
 const path = require('path');
 const sq = require('shell-quote');
 const fs = require('fs');
@@ -24,17 +24,18 @@ console.info = (...args) => console.log('\x1b[32m', ...args, '\x1b[0m');
 console.warn = (...args) => console.log('\x1b[33m', ...args, '\x1b[0m');
 
 function showHelp({ group }) {
-	console.log(`\x1b[1mHelp\x1b[0m`);
-	console.log('');
+	if (group === undefined) {
+		console.log(`\x1b[3;1mHelp\x1b[0m`);
+		console.log('');
+	}
 	_(cmds)
 		.filter(cmd => group === undefined || cmd.group === group)
-		.orderBy(['group', 'syntax'])
+		.map(({ group, parser }) => ({ group, help: parser.toHelp() }))
+		.orderBy(['group', 'help'])
 		.groupBy('group')
 		.each((items, name) => {
-			console.log(`  \x1b[1m${name}\x1b[0m`);
-			_(items)
-				.map(cmd => cmd.syntax.replace(/{([^:}]+)}/g, '\x1b[36;4m$1\x1b[0m'))
-				.each(str => console.log('    ' + str));
+			console.log(`\x1b[3;1m  ${name}  \x1b[0m`);
+			_.map(items, 'help').forEach(str => console.log(str));
 			console.log('');
 		});
 }
@@ -42,13 +43,8 @@ function showHelp({ group }) {
 /* Registration */
 
 function register(group, syntax, func) {
-	const parser = dslap.parsers.comprehension(syntax, {
-		whitespace: '\x1b',
-		capture: '([^\\x1b\\s][^\\x1b]*)',
-		groupsPerCapture: 1,
-		flags: 'iu'
-	});
-	cmds.push({ group, syntax, func, parser });
+	const parser = qash.spec(syntax);
+	cmds.push({ group, func, parser });
 	return { register: registerWrap(group) };
 }
 
@@ -58,29 +54,29 @@ function registerWrap(group) {
 
 /* Execution */
 
-function execString(str) {
-	if (str.length === 0) {
+function executeTokens(tokens) {
+	if (tokens.length === 0) {
 		return q();
 	}
-	const parsed = cmds.reduce((res, test) => {
+	const parsed = cmds.reduce((res, { func, parser }) => {
 		if (res) {
 			return res;
 		}
-		const args = test.parser(str);
+		const args = qash.parse(parser, tokens);
 		if (args) {
-			return { func: test.func, args: test.parser(str) };
+			return { func, args };
 		} else {
 			return null;
 		}
 	}, null);
 	if (parsed === null) {
-		throw new Error('Invalid command: ' + str.replace(/\x1b/g, ' '));
+		throw new Error('Invalid command: ' + sq.quote(tokens));
 	}
-	return parsed.func(parsed.args);
+	return q.try(() => parsed.func(_.fromPairs([...parsed.args])));
 }
 
-function executeTokens(args) {
-	return q(args.join('\x1b')).then(execString);
+function execString(str) {
+	return executeTokens(sq.parse(str));
 }
 
 /* Script running */
