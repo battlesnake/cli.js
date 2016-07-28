@@ -4,6 +4,7 @@ const qash = require('qash');
 const path = require('path');
 const sq = require('shell-quote');
 const fs = require('fs');
+const util = require('util');
 
 module.exports = cli;
 
@@ -58,21 +59,51 @@ function executeTokens(tokens) {
 	if (tokens.length === 0) {
 		return q();
 	}
-	const parsed = cmds.reduce((res, { func, parser }) => {
-		if (res) {
-			return res;
+	const partials = _(cmds)
+		.map(({ func, parser }) => ({ func, matches: parser.match(tokens), parser }))
+		.filter('matches')
+		.map(({ func, matches, parser }) => matches.map(match => ({ func, match, parser })))
+		.flatten()
+		.filter('match.taken')
+		.value();
+	const parsed = partials
+		.filter(x => x.match.taken === tokens.length && !x.match.failed);
+	const formatArgs = capture => capture.map(x => x.join(' = ')).join(', ');
+	const printResult = x => {
+		console.log('  ' + x.parser.toHelp());
+		if (x.match.capture.length) {
+			console.log(`    [${formatArgs(x.match.capture)}]`);
 		}
-		const args = qash.parse(parser, tokens);
-		if (args) {
-			return { func, args };
-		} else {
-			return null;
+	};
+	if (parsed.length === 0) {
+		const best =
+			_(partials)
+				.reject('match.failed')
+				.groupBy('match.taken')
+				.toPairs()
+				.maxBy('[0]') ||
+			_(partials)
+				.groupBy('match.taken')
+				.toPairs()
+				.maxBy('[0]');
+		if (best) {
+			console.log('Did you mean:');
+			best[1].forEach(printResult);
 		}
-	}, null);
-	if (parsed === null) {
+		console.log('');
 		throw new Error('Invalid command: ' + sq.quote(tokens));
 	}
-	return q.try(() => parsed.func(_.fromPairs([...parsed.args])));
+	if (parsed.length > 1) {
+		console.log('Possible interpretations:');
+		_(parsed)
+			.sortBy('match.taken')
+			.reverse()
+			.each(printResult);
+		console.log('');
+		throw new Error('Ambiguous command: ' + sq.quote(tokens) + '\nThis probably means that the shell language is defective');
+	}
+	const res = parsed[0];
+	return q.try(() => res.func(_.fromPairs(res.match.capture)));
 }
 
 function execString(str) {

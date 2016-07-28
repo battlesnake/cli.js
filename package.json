@@ -1,6 +1,6 @@
 {
   "name": "cli.js",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI app utility",
   "main": "index.js",
   "scripts": {
