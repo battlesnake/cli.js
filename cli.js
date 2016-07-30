@@ -148,7 +148,7 @@ function Script() {
 				.then(() => console.info(`Success: ${line}`),
 					err => {
 						console.error(`Failed: ${line}`);
-						const new_err = new Error(`Error on line #${number}: ${err.message}`);
+						const new_err = new Error(`Error on line #${number}: ${err.message || err}`);
 						new_err.original = err;
 						new_err.number = number;
 						new_err.line = line;
