@@ -87,11 +87,12 @@ function executeTokens(tokens) {
 				.toPairs()
 				.maxBy('[0]');
 		if (best) {
+			console.log('Failed to parse command: ' + sq.quote(tokens));
 			console.log('Did you mean:');
 			best[1].forEach(printResult);
 		}
 		console.log('');
-		throw new Error('Invalid command: ' + sq.quote(tokens));
+		return q.reject(new Error('Invalid command: ' + sq.quote(tokens)));
 	}
 	if (parsed.length > 1) {
 		console.log('Possible interpretations:');
@@ -100,7 +101,7 @@ function executeTokens(tokens) {
 			.reverse()
 			.each(printResult);
 		console.log('');
-		throw new Error('Ambiguous command: ' + sq.quote(tokens) + '\nThis probably means that the shell language is defective');
+		return q.reject(new Error('Ambiguous command: ' + sq.quote(tokens) + '\nThis probably means that the shell language is defective'));
 	}
 	const res = parsed[0];
 	return q.try(() => res.func(_.fromPairs(res.match.capture)));
