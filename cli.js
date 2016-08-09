@@ -104,7 +104,7 @@ function executeTokens(tokens) {
 		return q.reject(new Error('Ambiguous command: ' + sq.quote(tokens) + '\nThis probably means that the shell language is defective'));
 	}
 	const res = parsed[0];
-	return q.try(() => res.func(_.fromPairs(res.match.capture)));
+	return q.try(() => res.func(_.fromPairs(res.match.capture), tokens));
 }
 
 function execString(str) {
